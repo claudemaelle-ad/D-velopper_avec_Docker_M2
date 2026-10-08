@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Citation du jour</title>
+</head>
+<body>
+  <h1>Citation du jour</h1>
+  <p id="texte">Chargement...</p>
+  <p id="auteur"></p>
+
+  <script>
+    fetch("/api/quote")
+      .then(r => r.json())
+      .then(c => {
+        document.getElementById("texte").textContent = "« " + c.texte + " »";
+        document.getElementById("auteur").textContent = "— " + c.auteur;
+      })
+      .catch(() => {
+        document.getElementById("texte").textContent = "Citation indisponible";
+      });
+  </script>
+</body>
+</html>

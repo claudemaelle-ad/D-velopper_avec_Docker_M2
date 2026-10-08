@@ -1,0 +1,17 @@
+# Fichiers système du Mac
+.DS_Store
+
+# Node.js (front) : dépendances téléchargées et logs
+node_modules/
+npm-debug.log
+
+# Python (back) : fichiers compilés automatiquement
+__pycache__/
+*.pyc
+
+# Réglages personnels de l'éditeur
+.vscode/
+
+# Variables secrètes (mots de passe, clés)
+.env
+AGENTS.md

@@ -1,0 +1,30 @@
+# Projet Citation du jour : orchestration des trois services
+# Docker Compose les lance ensemble et les relie dans un même réseau,
+# où chaque  est joignable par son nom (front, back, nginx)
+
+services:
+
+  # API Python (Flask) qui fournit les citations
+  back:
+    # Construit l'image à partir du Dockerfile du dossier back
+    build: ./back
+    # Pas de "ports" : le back n'est accessible que via nginx
+
+  # Application Node.js qui affiche la page
+  front:
+    # Construit l'image à partir du Dockerfile du dossier front
+    build: ./front
+    # Pas de "ports" : le front n'est accessible que via nginx
+
+  # Porte d'entrée unique (reverse proxy)
+  nginx:
+    # Construit l'image à partir du Dockerfile du dossier nginx
+    build: ./nginx
+    # Seul port ouvert sur le Mac : 8081 du Mac vers 80 du conteneur
+    # Choix : 8081 évite les conflits avec d'autres applications
+    ports:
+      - "8081:80"
+    # Démarre front et back avant nginx, qui redirige vers eux
+    depends_on:
+      - front
+      - back

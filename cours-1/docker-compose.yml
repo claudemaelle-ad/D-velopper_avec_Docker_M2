@@ -1,0 +1,18 @@
+services:
+  back:
+    build: ./back
+    ports:
+      - "8080:5000"
+
+  front:
+    build: ./front
+    ports:
+      - "3000:3000"
+
+  nginx:
+    build: ./nginx
+    ports:
+      - "8081:80"
+    depends_on:
+      - front
+      - back
