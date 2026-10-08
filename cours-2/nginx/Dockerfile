@@ -5,9 +5,9 @@ FROM nginx:alpine
 # Métadonnées de l'image
 LABEL description="Reverse proxy du projet Citation du jour - nginx"
 
-# Remplace la configuration par défaut par la nôtre
-# nginx lit automatiquement les fichiers du dossier conf.d
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Au démarrage, nginx y remplace ${FRONT_PORT} et ${BACK_PORT}
+# par leurs valeurs, puis génère /etc/nginx/conf.d/default.conf
+COPY default.conf.template /etc/nginx/templates/default.conf.template
 
 EXPOSE 80
 

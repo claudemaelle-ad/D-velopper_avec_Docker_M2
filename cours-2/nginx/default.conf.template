@@ -1,0 +1,18 @@
+server {
+    listen 80;
+
+   
+    location / {
+        proxy_pass http://front:${FRONT_PORT};
+    }
+
+    # Adresses commençant par /api/ : redirigées vers le back
+    # Le "/" final retire "/api" : /api/quote devient /quote
+    location /api/ {
+        proxy_pass http://back:${BACK_PORT}/;
+    }
+
+    # Logs écrits dans de vrais fichiers, conservés dans le volume nginx-logs
+    access_log /var/log/nginx/citation-access.log;
+    error_log  /var/log/nginx/citation-error.log;
+}

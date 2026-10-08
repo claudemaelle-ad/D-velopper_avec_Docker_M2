@@ -1,6 +1,7 @@
 # Projet Citation du jour : orchestration des trois services
 # Docker Compose les lance ensemble et les relie dans un même réseau,
-# où chaque  est joignable par son nom (front, back, nginx)
+# où chaque service est joignable par son nom (front, back, nginx)
+# Les valeurs ${...} proviennent du fichier .env
 
 services:
 
@@ -8,23 +9,81 @@ services:
   back:
     # Construit l'image à partir du Dockerfile du dossier back
     build: ./back
+    # Variable transmise au conteneur : port d'écoute de l'API
+    environment:
+      - PORT=${BACK_PORT}
     # Pas de "ports" : le back n'est accessible que via nginx
+        # Uniquement dans le réseau du back : joignable seulement par nginx
+    networks:
+      - back-net
+        # Le fichier de citations de la machine remplace celui de l'image
+    # :ro (read-only) : le conteneur peut le lire mais pas le modifier
+    volumes:
+      - ./back/citations.json:/app/citations.json:ro
+    # Limites : 57 Mo max mesurés sous charge, on autorise 128 Mo
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
 
   # Application Node.js qui affiche la page
   front:
     # Construit l'image à partir du Dockerfile du dossier front
     build: ./front
+    # Variable transmise au conteneur : port d'écoute du front
+    environment:
+      - PORT=${FRONT_PORT}
     # Pas de "ports" : le front n'est accessible que via nginx
+        # Uniquement dans le réseau du front : ne peut pas joindre le back
+    networks:
+      - front-net
+    # Limites : ~9 Mo mesurés, on autorise 64 Mo
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 64M
 
   # Porte d'entrée unique (reverse proxy)
   nginx:
     # Construit l'image à partir du Dockerfile du dossier nginx
     build: ./nginx
-    # Seul port ouvert sur le Mac : 8081 du Mac vers 80 du conteneur
-    # Choix : 8081 évite les conflits avec d'autres applications
+    # Seul port ouvert sur la machine, défini dans le .env
+    # Ports du front et du back, utilisés dans la configuration nginx
+    environment:
+      - FRONT_PORT=${FRONT_PORT}
+      - BACK_PORT=${BACK_PORT}
     ports:
-      - "8081:80"
+      - "${NGINX_PORT}:80"
     # Démarre front et back avant nginx, qui redirige vers eux
     depends_on:
       - front
       - back
+        # Dans les deux réseaux : seul pont entre le front et le back
+    networks:
+      - front-net
+      - back-net
+        # Volume nommé : les logs survivent à la suppression du conteneur
+    volumes:
+      - nginx-logs:/var/log/nginx
+    # Limites : ~9 Mo mesurés sous charge, on autorise 64 Mo
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 64M
+
+# Déclaration des réseaux
+networks:
+  # Réseau entre nginx et le front
+  front-net:
+  # Réseau entre nginx et le back
+  # internal : aucun accès à Internet, le back est totalement isolé
+  back-net:
+    internal: true
+
+# Déclaration des volumes nommés (gérés par Docker)
+volumes:
+  # Logs de nginx, conservés entre les redémarrages
+  nginx-logs:

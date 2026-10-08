@@ -48,3 +48,22 @@ Pour tout arrêter :
 ```bash
 docker compose down
 ```
+
+## Benchmarks et limites de ressources
+
+Test : 20 000 requêtes sur `/api/quote`, 50 simultanées (`ab -l -n 20000 -c 50`).
+
+| Mesure | Sans limites | Avec limites |
+|---|---|---|
+| Requêtes par seconde | 1497 | 400 |
+| Temps moyen par requête | 33 ms | 125 ms |
+| Requêtes en échec | 0 | 0 |
+
+Consommation mémoire mesurée (`docker stats`) : back 22 Mo au repos et 57 Mo sous charge, nginx et front environ 9 Mo.
+
+Limites choisies (environ deux fois le maximum mesuré) :
+- back : 0,5 CPU, 128 Mo
+- front : 0,25 CPU, 64 Mo
+- nginx : 0,25 CPU, 64 Mo
+
+Aucune erreur avec les limites : la mémoire est suffisante. Le débit baisse car le CPU devient le facteur limitant, mais 400 requêtes par seconde suffisent largement pour ce projet, et les limites protègent la machine.
