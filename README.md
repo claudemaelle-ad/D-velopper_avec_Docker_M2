@@ -1,28 +1,27 @@
-# Projet Docker : Citation du jour
+# Citation du jour, hébergée sur un mini-cloud Docker
 
-Dépôt des travaux pratiques Docker, organisé par séance.
+Citation du jour est une petite application web en français. Quand on ouvre la page, elle affiche un titre « Citation du jour » suivi d'une citation d'un auteur célèbre (Socrate, Descartes, Pascal...), tirée au hasard à chaque rechargement.
 
-## cours-1 : premiers Dockerfiles
+Le projet a pour objectif de mettre en pratique la conteneurisation d'une application composée de plusieurs services, chacun dans son propre conteneur Docker. Le front, développé en Node.js, sert la page affichée à l'utilisateur. Le back, une petite API en Python avec Flask, fournit les citations au format JSON. Un serveur nginx joue le rôle de point d'entrée unique : il redirige les visites vers le front et les appels à l'API vers le back, si bien que seul son port est exposé sur la machine. L'ensemble est orchestré avec Docker Compose, qui construit et lance les trois services en une seule commande.
 
-Trois services "Hello World" construits instruction par instruction :
-- back : Python / Flask
-- front : Node.js
-- nginx : page statique
+Pour le projet final (TP Docker Cloud), cette application sert de démonstration à une infrastructure de type cloud : l'enjeu n'est pas l'application elle-même, mais la façon dont elle est hébergée. Les trois images sont personnalisées, et les ressources allouées à chaque conteneur (CPU, mémoire) ainsi que les ports sont passés au lancement via un fichier `.env`. Deux réseaux isolent les services (le back n'est joignable que par nginx et n'a pas accès à Internet), un volume permet de modifier les citations sans reconstruire l'image, et un autre conserve les logs de nginx. Les applications tournent sans droits root et s'arrêtent proprement. Les limites de ressources ont été choisies à partir de benchmarks.
 
-Orchestrés avec un premier docker-compose.
+## Organisation du dépôt
 
-## cours-2 : projet Citation du jour
+| Dossier | Contenu |
+|---|---|
+| **`projet-final/`** | **Rendu du TP Docker Cloud** : images, docker-compose, documentation complète et schéma d'architecture |
+| `cours-1/` | Séance 1 : premiers Dockerfiles "Hello World" (back, front, nginx) et premier docker-compose |
+| `cours-2/` | Séance 2 : projet Citation du jour, réseaux, volumes, `.env`, limites de ressources et benchmarks |
 
-Application web qui affiche une citation au hasard :
-- front (Node.js) : affiche la page
-- back (Python / Flask) : fournit les citations
-- nginx : point d'entrée unique, redirige vers le front ou le back
-
-Dockerfiles et docker-compose commentés, schéma et justification des choix dans `cours-2/README.md`.
-
-## Lancer une séance
+## Lancer le projet final
 
 ```bash
-cd cours-1   # ou cours-2
-docker compose up --build
+cd projet-final
+cp .env.example .env
+docker compose up -d --build
 ```
+
+Puis ouvrir **http://localhost:8081**.
+
+La documentation détaillée (choix au build, arguments du run, réseaux, volumes, benchmarks, guide de vérification) se trouve dans [`projet-final/README.md`](projet-final/README.md).
