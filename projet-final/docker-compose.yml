@@ -1,6 +1,6 @@
-# Projet Citation du jour : orchestration des trois services
-# Docker Compose les lance ensemble et les relie dans un même réseau,
-# où chaque service est joignable par son nom (front, back, nginx)
+# Projet Citation du jour : orchestration des services
+# - Application : back, front, nginx (lancés par docker compose up)
+# - CI/CD : lint et tests (lancés à la demande avec --profile ci).
 # Les valeurs ${...} proviennent du fichier .env
 
 services:
@@ -13,15 +13,15 @@ services:
     environment:
       - PORT=${BACK_PORT}
     # Pas de "ports" : le back n'est accessible que via nginx
-        # Uniquement dans le réseau du back : joignable seulement par nginx
+    # Uniquement dans le réseau du back : joignable seulement par nginx
     networks:
       - back-net
-        # Le fichier de citations de la machine remplace celui de l'image
+    # Le fichier de citations de la machine remplace celui de l'image
     # :ro (read-only) : le conteneur peut le lire mais pas le modifier
     volumes:
       - ./back/citations.json:/app/citations.json:ro
-    # Limites : 57 Mo max mesurés sous charge, on autorise 128 Mo
-        # Ressources allouées au run, définies dans le .env
+    # Ressources allouées au run, définies dans le .env
+    # (57 Mo mesurés sous charge, 128 Mo autorisés)
     deploy:
       resources:
         limits:
@@ -36,11 +36,11 @@ services:
     environment:
       - PORT=${FRONT_PORT}
     # Pas de "ports" : le front n'est accessible que via nginx
-        # Uniquement dans le réseau du front : ne peut pas joindre le back
+    # Uniquement dans le réseau du front : ne peut pas joindre le back
     networks:
       - front-net
-    # Limites : ~9 Mo mesurés, on autorise 64 Mo
-        # Ressources allouées au run, définies dans le .env
+    # Ressources allouées au run, définies dans le .env
+    # (9 Mo mesurés, 64 Mo autorisés)
     deploy:
       resources:
         limits:
@@ -51,31 +51,73 @@ services:
   nginx:
     # Construit l'image à partir du Dockerfile du dossier nginx
     build: ./nginx
-    # Seul port ouvert sur la machine, défini dans le .env
     # Ports du front et du back, utilisés dans la configuration nginx
     environment:
       - FRONT_PORT=${FRONT_PORT}
       - BACK_PORT=${BACK_PORT}
+    # Seul port ouvert sur la machine, défini dans le .env
     ports:
       - "${NGINX_PORT}:80"
     # Démarre front et back avant nginx, qui redirige vers eux
     depends_on:
       - front
       - back
-        # Dans les deux réseaux : seul pont entre le front et le back
+    # Dans les deux réseaux : seul pont entre le front et le back
     networks:
       - front-net
       - back-net
-        # Volume nommé : les logs survivent à la suppression du conteneur
+    # Volume nommé : les logs survivent à la suppression du conteneur
     volumes:
       - nginx-logs:/var/log/nginx
-    # Limites : ~9 Mo mesurés sous charge, on autorise 64 Mo
-        # Ressources allouées au run, définies dans le .env
+    # Ressources allouées au run, définies dans le .env
+    # (9 Mo mesurés sous charge, 64 Mo autorisés)
     deploy:
       resources:
         limits:
           cpus: "${NGINX_CPUS}"
           memory: ${NGINX_MEMORY}
+
+  # CI/CD : analyse du code Python du back (lint)
+  lint:
+    # Construit l'image à partir du Dockerfile du dossier lint
+    build: ./lint
+    # Profil "ci" : ne démarre pas avec l'application,
+    # uniquement à la demande avec --profile ci
+    profiles: ["ci"]
+    # Le code du back est monté en lecture seule : le linter le lit sans le modifier
+    volumes:
+      - ./back:/code:ro
+    # Aucun réseau : le linter n'a besoin de joindre personne
+    network_mode: none
+    # Ressources allouées au run, définies dans le .env
+    deploy:
+      resources:
+        limits:
+          cpus: "${LINT_CPUS}"
+          memory: ${LINT_MEMORY}
+
+    # CI/CD : tests de bout en bout de l'application
+  tests:
+    # Construit l'image à partir du Dockerfile du dossier tests
+    build: ./tests
+    # Profil "ci" : lancé uniquement à la demande avec --profile ci
+    profiles: ["ci"]
+    # Adresse de l'application testée : nginx, port 80, dans le réseau Docker
+    environment:
+      - BASE_URL=http://nginx:80
+    # Démarre l'application (nginx, et donc front et back) avant les tests
+    depends_on:
+      - nginx
+    # Dans front-net pour joindre nginx, comme un utilisateur
+    # Pas dans back-net : les tests passent par nginx, jamais directement par le back
+    networks:
+      - front-net
+    # Ressources allouées au run, définies dans le .env
+    deploy:
+      resources:
+        limits:
+          cpus: "${TESTS_CPUS}"
+          memory: ${TESTS_MEMORY}
 
 # Déclaration des réseaux
 networks:
