@@ -253,7 +253,7 @@ Le compose évite de retaper ces commandes pour chaque conteneur et garantit qu'
 
 Ordre obtenu : back et front, puis nginx, puis les tests.
 
-`depends_on` garantit l'ordre de **démarrage** des conteneurs, mais pas que l'application soit déjà **prête** à répondre. Pour ce projet, les services démarrent en moins d'une seconde, ce qui suffit en pratique (voir les pistes d'amélioration).
+`depends_on` garantit l'ordre de **démarrage** des conteneurs, mais pas que l'application soit déjà **prête** à répondre. C'est pourquoi le conteneur de tests attend lui-même que l'application réponde (jusqu'à 30 secondes) avant de lancer les tests.
 
 ## Réseaux
 

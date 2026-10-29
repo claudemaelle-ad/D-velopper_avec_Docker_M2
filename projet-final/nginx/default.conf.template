@@ -1,7 +1,16 @@
+# Configuration de nginx comme porte d'entrée (reverse proxy)
+# ${FRONT_PORT} et ${BACK_PORT} sont remplacés au démarrage
+# par les valeurs reçues du docker-compose (fichier .env)
 server {
+    # nginx écoute sur le port 80 dans le conteneur
     listen 80;
 
-   
+    # Logs écrits dans de vrais fichiers, conservés dans le volume nginx-logs
+    access_log /var/log/nginx/citation-access.log;
+    error_log  /var/log/nginx/citation-error.log;
+
+    # Page d'accueil et tout le reste : redirigé vers le front
+    # "front" est le nom du service dans docker-compose
     location / {
         proxy_pass http://front:${FRONT_PORT};
     }
@@ -11,8 +20,4 @@ server {
     location /api/ {
         proxy_pass http://back:${BACK_PORT}/;
     }
-
-    # Logs écrits dans de vrais fichiers, conservés dans le volume nginx-logs
-    access_log /var/log/nginx/citation-access.log;
-    error_log  /var/log/nginx/citation-error.log;
 }
