@@ -31,6 +31,6 @@ EXPOSE 3000
 # Vérifie toutes les 30 s que l'application répond sur /health
 # Le conteneur est marqué "unhealthy" après 3 échecs
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
-
+  CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 3000) + '/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
+  
 CMD ["node", "server.js"]
